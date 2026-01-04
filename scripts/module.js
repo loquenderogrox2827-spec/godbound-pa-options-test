@@ -3,7 +3,7 @@ Hooks.once("init", () => {
   // Register settings
   game.settings.register("godbound-pa-options", "paradoxHp", {
     name: "Paradoxical Archive HP",
-    hint: "Double Constitution score as base HP, plus (half Con score + Con mod) per level after 1.",
+    hint: "Double Constitution value as base HP, plus (Con mod + half Con value) per level after 1.",
     scope: "world",
     config: true,
     type: Boolean,
@@ -43,27 +43,28 @@ Hooks.once("init", () => {
 
       // Paradoxical Archive HP logic
       if (game.settings.get("godbound-pa-options", "paradoxHp")) {
-        const conScore = data.attributes?.con?.score ?? 8; // Default to 8
-        const conMod = data.attributes?.con?.mod ?? 0;
-        let newMaxHp = 2 * conScore;
+        const constitutionValue = data.attributes?.con?.value ?? 10; // Default Constitution value
+        const constitutionMod = data.attributes?.con?.mod ?? 0;
 
+        // Updated HP calculation: 2 * Constitution value + (Level - 1) * (Con mod + half Con value)
+        data.health.max = constitutionValue * 2;
         if (level > 1) {
-          newMaxHp += (level - 1) * (Math.floor(conScore / 2) + conMod);
+          data.health.max += (level - 1) * (constitutionMod + Math.ceil(constitutionValue / 2));
         }
 
-        data.hp.max = newMaxHp;
-
-        // Optional: Adjust HP value to ensure it's within bounds
-        data.hp.value = Math.min(data.hp.value, newMaxHp);
+        // Optional: Adjust HP value to prevent exceeding max
+        data.health.value = Math.min(data.health.value ?? 0, data.health.max);
       }
 
       // Starting Effort Override logic (only applies at level 1)
       const effortOverride = game.settings.get("godbound-pa-options", "startingEffort");
       if (effortOverride > 0 && level === 1) {
-        data.effort.max = effortOverride;
+        data.resources.effort.max = effortOverride;
 
-        // Cap current effort to avoid exceeding the max
-        if (data.effort.value > effortOverride) data.effort.value = effortOverride;
+        // Cap current effort to the max defined by the override
+        if (data.resources.effort.value > effortOverride) {
+          data.resources.effort.value = effortOverride;
+        }
       }
     }, "WRAPPER");
 
