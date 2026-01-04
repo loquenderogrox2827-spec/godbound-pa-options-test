@@ -89,7 +89,7 @@ Hooks.once("init", () => {
   libWrapper.register("godbound-pa-options", "CONFIG.Actor.documentClass.prototype.prepareDerivedData", function (...args) {
 
     const { dominionSpent, influenceUsed, bonusEffort, bonusInfluence } =
-            this.parent.items
+            data.parent.items
                 .filter((i) => i.type == 'project' || i.type == 'word')
                 .reduce(
                     (acc, i) => ({
@@ -112,13 +112,13 @@ Hooks.once("init", () => {
                         bonusInfluence: 0,
                     }
                 )
-        this.resources.dominion.spent = dominionSpent
+        data.resources.dominion.spent = dominionSpent
         const { level, idx } = tables.advancement.reduce(
             (acc, r, idx) => {
                 if (
-                    r.requirements.xp <= this.details.level.xp &&
+                    r.requirements.xp <= data.details.level.xp &&
                     r.requirements.dominionSpent <=
-                        this.resources.dominion.spent &&
+                        data.resources.dominion.spent &&
                     r.level >= acc.level
                 ) {
                     return { level: r.level, idx }
@@ -128,40 +128,40 @@ Hooks.once("init", () => {
             },
             { level: 1, idx: 0 }
         ) ?? { level: 1, idx: 0 }
-        this.details.level.value = level
+        data.details.level.value = level
         if (level < 10) {
-            this.advancement = tables.advancement[idx + 1].requirements
+            data.advancement = tables.advancement[idx + 1].requirements
         } else {
-            this.advancement = false
+            data.advancement = false
         }
-        this.resources.effort.max =
-            this.details.level.value - 1 + 2 + bonusEffort
-        this.resources.influence.max =
-            this.details.level.value - 1 + 2 + bonusInfluence
-        this.resources.effort.value = this.parent.items.reduce(
+        data.resources.effort.max =
+            data.details.level.value - 1 + 2 + bonusEffort
+        data.resources.influence.max =
+            data.details.level.value - 1 + 2 + bonusInfluence
+        data.resources.effort.value = data.parent.items.reduce(
             (acc, i) =>
                 ['word', 'gift'].includes(i.type)
                     ? Math.max(acc - i.system.effort, 0)
                     : acc,
-            this.resources.effort.max
+            data.resources.effort.max
         )
-        this.resources.influence.value =
-            this.resources.influence.max - influenceUsed
+        data.resources.influence.value =
+            data.resources.influence.max - influenceUsed
         if (game.settings.get("godbound-pa-options", "paradoxHp")) {
-            this.health.max =
-            this.attributes.con.value * 2 +
-            (this.details.level.value - 1) *
-                (this.attributes.con.mod + Math.ceil(this.attributes.con.value / 2))
+            data.health.max =
+            data.attributes.con.value * 2 +
+            (data.details.level.value - 1) *
+                (data.attributes.con.mod + Math.ceil(data.attributes.con.value / 2))
           }
         else {
-            this.health.max =
+            data.health.max =
             8 +
-            this.attributes.con.mod +
-            (this.details.level.value - 1) *
-                (4 + Math.ceil(this.attributes.con.mod / 2))
+            data.attributes.con.mod +
+            (data.details.level.value - 1) *
+                (4 + Math.ceil(data.attributes.con.mod / 2))
           }
-        this.health.value = fns.bound(this.health.value, 0, this.health.max)
-        this.prepareSaves()
+        data.health.value = fns.bound(data.health.value, 0, data.health.max)
+        data.prepareSaves()
     
 
   }, "OVERRIDE");
