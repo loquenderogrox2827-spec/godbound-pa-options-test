@@ -43,17 +43,24 @@ Hooks.once("init", () => {
 
       // Paradoxical Archive HP logic
       if (game.settings.get("godbound-pa-options", "paradoxHp")) {
-        const constitutionValue = data.attributes?.con?.value ?? 10; // Default Constitution value
+        const oldMax = data.health.max; // Capture the system's default max AFTER wrapped() ran
+      
+        const constitutionValue = data.attributes?.con?.value ?? 10;
         const constitutionMod = data.attributes?.con?.mod ?? 0;
-
-        // Updated HP calculation: 2 * Constitution value + (Level - 1) * (Con mod + half Con value)
-        data.health.max = constitutionValue * 2;
+      
+        // Your custom max calculation
+        let newMax = constitutionValue * 2;
         if (level > 1) {
-          data.health.max += (level - 1) * (constitutionMod + Math.ceil(constitutionValue / 2));
+          newMax += (level - 1) * (constitutionMod + Math.ceil(constitutionValue / 2));
         }
-
-        // Optional: Adjust HP value to prevent exceeding max (I would like to kill myself instead :>)
-        data.health.value = Math.min(data.health.value ?? 0, data.health.max);
+      
+        data.health.max = newMax;
+      
+        // Key fix: Add the gained HP to current value (standard way systems handle max increases)
+        data.health.value += (newMax - oldMax);
+      
+        // Full clamp to be safe (mirrors system's fns.bound behavior)
+        data.health.value = Math.max(0, Math.min(data.health.value, data.health.max));
       }
 
       // Starting Effort Override logic (only applies at level 1)
