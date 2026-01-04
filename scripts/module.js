@@ -85,8 +85,8 @@ Hooks.once("init", () => {
     onChange: refreshCharacters
   });
 
-  // Wrap prepareDerivedData — override max HP + Effort (do NOT touch health.value here)
-  libWrapper.register("godbound-pa-options", "CONFIG.Actor.documentClass.prototype.prepareDerivedData", function (wrapped, ...args) {
+  // Wrap prepareLevelValues — override max HP + Effort (do NOT touch health.value here)
+  libWrapper.register("godbound-pa-options", "CONFIG.Actor.documentClass.prototype.prepareLevelValues", function (wrapped, ...args) {
     wrapped(...args);
 
     if (this.type !== "character") return;
