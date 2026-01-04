@@ -1,4 +1,4 @@
-Hooks.once("libWrapper.Ready", () => {
+Hooks.once("init", () => {
   // General refresh function for sheets
   const refreshCharacters = () => {
     const characters = game.actors.filter(a => a.type === "character");
