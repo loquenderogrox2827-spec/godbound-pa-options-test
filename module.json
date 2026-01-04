@@ -2,7 +2,7 @@
   "id": "godbound-pa-options",
   "title": "Godbound: Paradoxical Archive Options",
   "description": "Adds world settings for alternative HP calculation, damage handling, and starting Effort override for the Godbound system.",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "authors": [
     {
       "name": "Snooky",
