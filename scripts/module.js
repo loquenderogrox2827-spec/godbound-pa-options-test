@@ -57,10 +57,10 @@ Hooks.once("init", () => {
         data.health.max = newMax;
       
         // Add the gained HP to current value
-        data.health.value += (newMax - oldMax);
+        // data.health.value += (newMax - oldMax);
       
         // Full clamp to be safe (mirrors system's fns.bound behavior)
-        // data.health.value = Math.max(0, Math.min(data.health.value, data.health.max));
+        data.health.value = Math.max(0, Math.min(data.health.value, data.health.max));
       }
 
       // Starting Effort Override logic (only applies at level 1)
