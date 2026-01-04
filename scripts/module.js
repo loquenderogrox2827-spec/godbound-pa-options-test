@@ -105,10 +105,9 @@ Hooks.once("init", () => {
       }
       const oldMax = data.health?.max ?? 1;
       const oldValue = data.health?.value ?? 0;
-      const pct = oldMax > 0 ? (oldValue / oldMax) : 1;
       
       data.health.max = newMax;
-      data.health.value = Math.min(Math.round(pct * newMax), newMax);
+      data.health.value = Math.min(data.health.value, newMax);
     }
 
     // Effort override at level 1
