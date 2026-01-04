@@ -11,7 +11,7 @@ A Foundry VTT module for the Godbound system that adds optional rules inspired b
 In Foundry VTT:
 1. Go to **Add-on Modules** → **Install Module**.
 2. Paste the manifest URL:  
-   `https://raw.githubusercontent.com/YOUR-USERNAME/godbound-pa-options/main/module.json`
+   `https://raw.githubusercontent.com/loquenderogrox2827-spec/godbound-pa-options-test/main/module.json`
 3. Install and enable.
 
 ## Requirements
