@@ -1,0 +1,45 @@
+{
+  "id": "godbound-pa-options",
+  "title": "Godbound: Paradoxical Archive Options",
+  "description": "Adds world settings for alternative HP calculation, damage handling, and starting Effort override for the Godbound system.",
+  "version": "0.1.0",
+  "authors": [
+    {
+      "name": "Snooky",
+      "discord": "SnookySkellingtons",
+      "url": "https://github.com/loquenderogrox2827-spec"
+    }
+  ],
+  "compatibility": {
+    "minimum": "12",
+    "verified": "13"
+  },
+  "esmodules": [
+    "scripts/module.js"
+  ],
+  "styles": [],
+  "relationships": {
+    "systems": [
+      {
+        "id": "godbound",
+        "type": "system",
+        "manifest": "https://raw.githubusercontent.com/Sparky939/godbound/main/system.json",
+        "compatibility": {
+          "minimum": "1.0.0"
+        }
+      }
+    ],
+    "requires": [
+      {
+        "id": "lib-wrapper",
+        "type": "module",
+        "manifest": "https://github.com/ruipin/fvtt-lib-wrapper/blob/master/module.json",
+        "compatibility": {}
+      }
+    ]
+  },
+  "url": "https://github.com/loquenderogrox2827-spec/godbound-pa-options-test",
+  "manifest": "https://raw.githubusercontent.com/loquenderogrox2827-spec/godbound-pa-options-test/main/module.json",
+  "download": "https://github.com/loquenderogrox2827-spec/godbound-pa-options-test/archive/main.zip",
+  "readme": "https://github.com/loquenderogrox2827-spec/godbound-pa-options-test/blob/main/README.md"
+}
