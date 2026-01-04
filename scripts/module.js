@@ -88,7 +88,7 @@ const registerWrappers = () => {
 
   libWrapper.register(
     "godbound-pa-options",
-    "CONFIG.Actor.documentClass.prototype.prepareDerivedData",
+    "CONFIG.Actor.documentClass.prototype.prepareLevelValues",
     function (wrapped, ...args) {
       // call original first
       wrapped(...args);
