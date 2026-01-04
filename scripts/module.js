@@ -8,51 +8,55 @@ Hooks.once("init", () => {
     });
   };
 
-  // Specific handler for Paradox HP toggle
+  // Specific handler for Paradox HP toggle — one-time proportional grant on enable
   const handleParadoxHpChange = async (enabled) => {
     const characters = game.actors.filter(a => a.type === "character");
 
-    for (const actor of characters) {
-      await actor.prepareData(); // Ensure latest data
+    let updatedCount = 0;
 
-      const data = actor.system;
+    for (const actor of characters) {
+      const data = actor.system; // Persistent data — no need to prepare first
       const level = data.details?.level?.value ?? 1;
       const conValue = data.attributes?.con?.value ?? 10;
       const conMod = data.attributes?.con?.mod ?? 0;
 
-      // System default max (duplicate original formula)
+      // Hardcoded system default max (exact match to original formula)
       const oldMax = 8 + conMod + (level - 1) * (4 + Math.ceil(conMod / 2));
 
-      // Custom new max
+      // Your custom max
       let newMax = conValue * 2;
       if (level > 1) {
         newMax += (level - 1) * (conMod + Math.ceil(conValue / 2));
       }
 
+      const currentValue = data.health?.value ?? 0;
+
       if (enabled) {
         const difference = Math.max(0, newMax - oldMax);
-        if (difference > 0) {
-          const currentValue = data.health.value ?? 0;
-          const newValue = Math.min(newMax, currentValue + difference);
+        const newValue = Math.min(currentValue + difference, newMax);
+
+        if (newValue !== currentValue) {
           await actor.update({ "system.health.value": newValue });
+          updatedCount++;
         }
       } else {
-        // When disabling, clamp down to system max
-        const clampValue = Math.min(data.health.value ?? 0, oldMax);
-        if (clampValue < data.health.value) {
+        // When disabling, clamp down to old system max
+        const clampValue = Math.min(currentValue, oldMax);
+        if (clampValue < currentValue) {
           await actor.update({ "system.health.value": clampValue });
+          updatedCount++;
         }
       }
     }
 
     refreshCharacters();
-    ui.notifications.info(`Paradoxical Archive HP ${enabled ? "enabled" : "disabled"} — adjustments applied.`);
+    ui.notifications.info(`Paradoxical Archive HP ${enabled ? "enabled" : "disabled"} — ${updatedCount} character(s) adjusted and refreshed.`);
   };
 
   // Register settings
   game.settings.register("godbound-pa-options", "paradoxHp", {
     name: "Paradoxical Archive HP",
-    hint: "Double Constitution value as base HP, plus (Con mod + ceil(Con value / 2)) per level after 1. Grants extra current HP on enable.",
+    hint: "Double Con value as base HP + per-level bonus. On enable: grants proportional extra current HP (preserves relative health). On disable: clamps excess.",
     scope: "world",
     config: true,
     type: Boolean,
@@ -62,7 +66,7 @@ Hooks.once("init", () => {
 
   game.settings.register("godbound-pa-options", "paradoxDamage", {
     name: "Paradoxical Archive Damage",
-    hint: "Remove damage table for normal rolls; double total for straight damage. (Current implementation is placeholder — needs roll wrapper.)",
+    hint: "Placeholder checkbox for damage changes (not yet implemented).",
     scope: "world",
     config: true,
     type: Boolean,
@@ -81,7 +85,7 @@ Hooks.once("init", () => {
     onChange: refreshCharacters
   });
 
-  // Wrap actor prepareDerivedData — ONLY override max HP (do NOT touch value here)
+  // Wrap prepareDerivedData — override max HP + Effort (do NOT touch health.value here)
   libWrapper.register("godbound-pa-options", "CONFIG.Actor.documentClass.prototype.prepareDerivedData", function (wrapped, ...args) {
     wrapped(...args);
 
@@ -90,6 +94,7 @@ Hooks.once("init", () => {
     const data = this.system;
     const level = data.details?.level?.value ?? 1;
 
+    // Custom HP max override
     if (game.settings.get("godbound-pa-options", "paradoxHp")) {
       const conValue = data.attributes?.con?.value ?? 10;
       const conMod = data.attributes?.con?.mod ?? 0;
@@ -100,10 +105,9 @@ Hooks.once("init", () => {
       }
 
       data.health.max = newMax;
-      // NO value adjustment here — handled one-time on setting change
     }
 
-    // Effort override — recompute current properly (grants extra if commitments allow)
+    // Effort override at level 1
     const effortOverride = game.settings.get("godbound-pa-options", "startingEffort");
     if (effortOverride > 0 && level === 1) {
       const committed = this.items.reduce((acc, item) => {
@@ -117,7 +121,4 @@ Hooks.once("init", () => {
       data.resources.effort.value = Math.max(0, effortOverride - committed);
     }
   }, "WRAPPER");
-
-  // Damage placeholder — your current item wrapper is incorrect (damage isn't in prepareDerivedData, and die size doubling won't work right)
-  // We'll fix this properly once HP/Effort are confirmed good.
 });
