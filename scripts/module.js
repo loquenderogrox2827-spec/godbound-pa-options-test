@@ -1,4 +1,4 @@
-Hooks.once("libWrapper.Ready", () => {
+Hooks.once("init", () => {
   // General refresh function for sheets
   const refreshCharacters = () => {
     const characters = game.actors.filter(a => a.type === "character");
@@ -85,84 +85,40 @@ Hooks.once("libWrapper.Ready", () => {
     onChange: refreshCharacters
   });
 
-  // override prepareDerivedData — override max HP + Effort (do NOT touch health.value here)
-  libWrapper.register("godbound-pa-options", "CONFIG.Actor.documentClass.prototype.prepareLevelValues", function (...args) {
+  // Wrap prepareDerivedData — override max HP + Effort (do NOT touch health.value here)
+  libWrapper.register("godbound-pa-options", "CONFIG.Actor.documentClass.prototype.prepareDerivedData", function (wrapped, ...args) {
+    wrapped(...args);
 
-    const { dominionSpent, influenceUsed, bonusEffort, bonusInfluence } =
-            data.parent.items
-                .filter((i) => i.type == 'project' || i.type == 'word')
-                .reduce(
-                    (acc, i) => ({
-                        dominionSpent:
-                            acc.dominionSpent + (i.system?.cost?.dominion || 0),
-                        influenceUsed:
-                            acc.influenceUsed +
-                            (i.system?.cost?.influence || 0),
-                        bonusEffort:
-                            acc.bonusEffort +
-                            (i.system?.effortOfTheWord ? 1 : 0),
-                        bonusInfluence:
-                            acc.bonusInfluence +
-                            (i.system?.influenceOfTheWord ? 1 : 0),
-                    }),
-                    {
-                        dominionSpent: 0,
-                        influenceUsed: 0,
-                        bonusEffort: 0,
-                        bonusInfluence: 0,
-                    }
-                )
-        data.resources.dominion.spent = dominionSpent
-        const { level, idx } = tables.advancement.reduce(
-            (acc, r, idx) => {
-                if (
-                    r.requirements.xp <= data.details.level.xp &&
-                    r.requirements.dominionSpent <=
-                        data.resources.dominion.spent &&
-                    r.level >= acc.level
-                ) {
-                    return { level: r.level, idx }
-                } else {
-                    return acc
-                }
-            },
-            { level: 1, idx: 0 }
-        ) ?? { level: 1, idx: 0 }
-        data.details.level.value = level
-        if (level < 10) {
-            data.advancement = tables.advancement[idx + 1].requirements
-        } else {
-            data.advancement = false
+    if (this.type !== "character") return;
+
+    const data = this.system;
+    const level = data.details?.level?.value ?? 1;
+
+    // Custom HP max override
+    if (game.settings.get("godbound-pa-options", "paradoxHp")) {
+      const conValue = data.attributes?.con?.value ?? 10;
+      const conMod = data.attributes?.con?.mod ?? 0;
+
+      let newMax = conValue * 2;
+      if (level > 1) {
+        newMax += (level - 1) * (conMod + Math.ceil(conValue / 2));
+      }
+
+      data.health.max = newMax;
+    }
+
+    // Effort override at level 1
+    const effortOverride = game.settings.get("godbound-pa-options", "startingEffort");
+    if (effortOverride > 0 && level === 1) {
+      const committed = this.items.reduce((acc, item) => {
+        if (["word", "gift"].includes(item.type)) {
+          return acc + (item.system.effort || 0);
         }
-        data.resources.effort.max =
-            data.details.level.value - 1 + 2 + bonusEffort
-        data.resources.influence.max =
-            data.details.level.value - 1 + 2 + bonusInfluence
-        data.resources.effort.value = data.parent.items.reduce(
-            (acc, i) =>
-                ['word', 'gift'].includes(i.type)
-                    ? Math.max(acc - i.system.effort, 0)
-                    : acc,
-            data.resources.effort.max
-        )
-        data.resources.influence.value =
-            data.resources.influence.max - influenceUsed
-        if (game.settings.get("godbound-pa-options", "paradoxHp")) {
-            data.health.max =
-            data.attributes.con.value * 2 +
-            (data.details.level.value - 1) *
-                (data.attributes.con.mod + Math.ceil(data.attributes.con.value / 2))
-          }
-        else {
-            data.health.max =
-            8 +
-            data.attributes.con.mod +
-            (data.details.level.value - 1) *
-                (4 + Math.ceil(data.attributes.con.mod / 2))
-          }
-        data.health.value = fns.bound(data.health.value, 0, data.health.max)
-        data.prepareSaves()
-    
+        return acc;
+      }, 0);
 
-  }, "OVERRIDE");
+      data.resources.effort.max = effortOverride;
+      data.resources.effort.value = Math.max(0, effortOverride - committed);
+    }
+  }, "WRAPPER");
 });
