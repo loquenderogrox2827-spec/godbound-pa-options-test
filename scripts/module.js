@@ -1,4 +1,4 @@
-Hooks.once("init", () => {
+Hooks.once("libWrapper.Ready", () => {
   // General refresh function for sheets
   const refreshCharacters = () => {
     const characters = game.actors.filter(a => a.type === "character");
@@ -86,33 +86,38 @@ Hooks.once("init", () => {
   });
 
   // Wrap prepareDerivedData — override max HP + Effort (do NOT touch health.value here)
-libWrapper.register(
-  "godbound-pa-options",
-  "CONFIG.Actor.documentClass.prototype.prepareDerivedData",
-  function (wrapped, ...args) {
+  libWrapper.register("godbound-pa-options", "CONFIG.Actor.documentClass.prototype.prepareDerivedData", function (wrapped, ...args) {
     wrapped(...args);
+
     if (this.type !== "character") return;
 
     const data = this.system;
     const level = data.details?.level?.value ?? 1;
 
+    // Custom HP max override
     if (game.settings.get("godbound-pa-options", "paradoxHp")) {
       const conValue = data.attributes?.con?.value ?? 10;
       const conMod = data.attributes?.con?.mod ?? 0;
 
-      // compute new max
       let newMax = conValue * 2;
-      if (level > 1) newMax += (level - 1) * (conMod + Math.ceil(conValue / 2));
-
-      // preserve the current % of HP relative to the OLD max (so characters don't lose ratio)
+      if (level > 1) {
+        newMax += (level - 1) * (conMod + Math.ceil(conValue / 2));
+      }
       const oldMax = data.health?.max ?? 1;
       const oldValue = data.health?.value ?? 0;
       const pct = oldMax > 0 ? (oldValue / oldMax) : 1;
-
-      // set derived values for display (not persistent)
+      
       data.health.max = newMax;
       data.health.value = Math.min(Math.round(pct * newMax), newMax);
     }
+
+    // Effort override at level 1
+    const effortOverride = game.settings.get("godbound-pa-options", "startingEffort");
+    if (effortOverride > 0 && level === 1) {
+      const committed = this.items.reduce((acc, item) => {
+        if (["word", "gift"].includes(item.type)) {
+          return acc + (item.system.effort || 0);
+        }
         return acc;
       }, 0);
 
