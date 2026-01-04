@@ -53,7 +53,7 @@ Hooks.once("init", () => {
         }
 
         // Optional: Adjust HP value to prevent exceeding max
-        data.health.value = Math.min(data.health.value ?? 0, data.health.max);
+        data.health.value = Math.min(data.health.value ?? 0, (level - 1) * (constitutionMod + Math.ceil(constitutionValue / 2)));
       }
 
       // Starting Effort Override logic (only applies at level 1)
